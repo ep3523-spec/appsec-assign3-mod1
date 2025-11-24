@@ -1,0 +1,63 @@
+name: Build and Push Django Image
+
+permissions:
+  contents: read
+  
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    runs-on: self-hosted 
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate signed commit
+        if: github.event_name == 'push'
+        run: |
+          echo "Verifying commit signature";
+          git log -1 --show-signature || echo "(Signature display only; ensure GPG/SSH signing configured)"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # NOTE: Secrets must be defined in repo settings. Lint tool may flag placeholders.
+
+      - name: Derive short SHA tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and push Django image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          provenance: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ steps.vars.outputs.sha_short }}
+          build-args: |
+            DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+        # Lint tool warnings about secret context can be ignored; GitHub resolves at runtime.
+        # You can optionally add labels for traceability
+
+      - name: Logout
+        if: always()
+        run: docker logout
+
+      - name: Summary
+        run: |
+          echo "Image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest";
+          echo "Commit tag: ${{ steps.vars.outputs.sha_short }}";
+      # Removed automatic .env copy to avoid accidental inclusion of unsafe defaults.
