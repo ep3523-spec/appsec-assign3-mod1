@@ -35,6 +35,8 @@ jobs:
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
       - name: Image digest
-        run: echo "Image digest: ${{ steps.buildpush.outputs.digest }}"
+        run: |
+          echo "Image digest: ${{ steps.buildpush.outputs.digest }}"
       - name: Post-build security note
-        run: echo "Ensure DJANGO_SECRET_KEY is provided at runtime via Kubernetes Secret or CI environment."
+        run: |
+          echo "Ensure DJANGO_SECRET_KEY is provided at runtime via Kubernetes Secret or CI environment."
