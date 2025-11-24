@@ -23,6 +23,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Derive short SHA tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Build and Push Django Image
         id: buildpush
         uses: docker/build-push-action@v5
@@ -30,13 +33,17 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/assign3-django:latest,${{ secrets.DOCKERHUB_USERNAME }}/assign3-django:${{ github.sha }}
+          provenance: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ steps.vars.outputs.sha_short }}
+          build-args: |
+            DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
       - name: Image digest
         run: |
-          echo "Image digest: ${{ steps.buildpush.outputs.digest }}"
-      - name: Post-build security note
-        run: |
-          echo "Ensure DJANGO_SECRET_KEY is provided at runtime via Kubernetes Secret or CI environment."
+          echo "Image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest"
+          echo "Commit tag: ${{ steps.vars.outputs.sha_short }}"
+      - name: Logout
+        if: always()
+        run: docker logout
