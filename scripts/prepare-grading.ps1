@@ -1,11 +1,20 @@
-# PowerShell script: prepare-grading.ps1
-# Automates local validation steps before pushing and tagging for autograder.
-# Run from repository root in PowerShell 5.1 or later.
+<#
+    prepare-grading.ps1
+    Automates local validation steps before pushing and tagging for autograder.
+    Usage examples:
+        powershell -ExecutionPolicy Bypass -File .\scripts\prepare-grading.ps1 -TagNow
+        powershell -ExecutionPolicy Bypass -File .\scripts\prepare-grading.ps1 -SkipBuild -SkipK8s
+#>
+
+param(
+    [switch]$SkipBuild,
+    [switch]$SkipK8s,
+    [switch]$TagNow,
+    [string]$TagName = "assign3mod1handin"
+)
 
 Write-Host "[Step] Verifying Git repository..." -ForegroundColor Cyan
-if (-not (Test-Path .git)) {
-    Write-Error "This directory is not a git repository (.git missing). Re-clone before proceeding."; exit 1
-}
+if (-not (Test-Path .git)) { Write-Error "This directory is not a git repository (.git missing). Re-clone before proceeding."; exit 1 }
 
 $inside = (git rev-parse --is-inside-work-tree 2>$null)
 if ($LASTEXITCODE -ne 0 -or $inside -ne $true) { Write-Error "Git reports not inside work tree."; exit 1 }
@@ -20,9 +29,7 @@ if ($status) { Write-Host "Uncommitted changes detected:" -ForegroundColor Yello
 
 Write-Host "[Step] Verifying commit signing setup..." -ForegroundColor Cyan
 $lastCommit = git log -1 --show-signature 2>$null
-if ($lastCommit -notmatch "Signature") {
-    Write-Warning "Last commit not signed or signature not displayed. Ensure GPG/SSH signing configured before final push."
-}
+if ($lastCommit -notmatch "Signature") { Write-Warning "Last commit not signed or signature not displayed. Ensure GPG/SSH signing configured before final push." }
 
 Write-Host "[Step] Validating required files..." -ForegroundColor Cyan
 $requiredFiles = @(
@@ -42,25 +49,25 @@ if ($settingsContent -notmatch "DJANGO_SECRET_KEY") { Write-Error "SECRET_KEY en
 Write-Host "SECRET_KEY logic OK." -ForegroundColor Green
 
 Write-Host "[Step] Optional: Local docker build (skip with -SkipBuild)" -ForegroundColor Cyan
-param(
-    [switch]$SkipBuild,
-    [switch]$SkipK8s,
-    [switch]$TagNow,
-    [string]$TagName = "assign3mod1handin"
-)
-
 if (-not $SkipBuild) {
-    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { Write-Warning "Docker not found in PATH; skipping image builds." } else {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        Write-Warning "Docker not found in PATH; skipping image builds."
+    } else {
         Write-Host "Building images..." -ForegroundColor Cyan
-        docker build -t nyuappsec/assign3:v0 . || { Write-Error "Django image build failed"; exit 1 }
-        docker build -t nyuappsec/assign3-db:v0 db || { Write-Error "DB image build failed"; exit 1 }
-        docker build -t nyuappsec/assign3-proxy:v0 proxy || { Write-Error "Proxy image build failed"; exit 1 }
+        docker build -t nyuappsec/assign3:v0 .
+        if ($LASTEXITCODE -ne 0) { Write-Error "Django image build failed"; exit 1 }
+        docker build -t nyuappsec/assign3-db:v0 db
+        if ($LASTEXITCODE -ne 0) { Write-Error "DB image build failed"; exit 1 }
+        docker build -t nyuappsec/assign3-proxy:v0 proxy
+        if ($LASTEXITCODE -ne 0) { Write-Error "Proxy image build failed"; exit 1 }
         Write-Host "Images built successfully." -ForegroundColor Green
     }
 }
 
 if (-not $SkipK8s) {
-    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) { Write-Warning "kubectl not found; skipping cluster apply." } else {
+    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        Write-Warning "kubectl not found; skipping cluster apply."
+    } else {
         Write-Host "Applying Kubernetes manifests (assuming secret base64 values already updated)..." -ForegroundColor Cyan
         kubectl apply -f GiftcardSite/k8/django-secrets.yaml
         kubectl apply -f db/k8
