@@ -242,9 +242,95 @@ git push origin assign3mod1handin
 
 **The autograder may take some time to process this assignment, as it rebuilds your Docker image and verifies the entire Kubernetes setup. Please be patient and allow Gradescope to finish before resubmitting.**
 
-### Added Implementation (Security Improvements)
+### Module 1 Security Hardening Summary
 
-The following hardening steps have been applied in this fork for instructional purposes:
+**Applied Improvements (Assignment Requirements)**
+
+| Requirement | Implementation |
+|------------|----------------|
+| **1.1 Signed Commits** | Enabled GPG/SSH commit signing (see guidance below). At least one verified commit required before tagging. |
+| **1.2 SECRET_KEY Environment Variable** | `GiftcardSite/GiftcardSite/settings.py` loads `SECRET_KEY` (with fallback to `DJANGO_SECRET_KEY`) from environment; raises error if missing. No hardcoded secrets. |
+| **2.1 Dangerous Monitoring Removed** | Eliminated any password logging or unsafe metric labels. Only safe counters (404 counts) remain. |
+| **2.2 404 Metrics Middleware** | Added `LegacySite.middleware.NotFoundMetricMiddleware` with Prometheus counter `http_404_total`. Registered in `MIDDLEWARE` list. |
+| **0.2 Docker Image Push** | Configured GitHub Actions workflow (`docker-push.yml`) to build and push `assign3` image with tags: `v0`, `latest`, `<sha>`, `assign3mod1handin`. Includes automated Trivy vulnerability scanning post-push. |
+
+**CI/CD Pipeline Enhancements**
+
+- **Workflow Consolidation**: Removed redundant workflows; single `docker-push.yml` handles build, push, and security scan.
+- **Secret Management**: Centralized secrets into job-level environment variables; added preflight checks (presence and token length validation).
+- **Vulnerability Gating**: Trivy scan fails workflow if High/Critical vulnerabilities detected; SARIF uploaded to GitHub Security tab.
+- **Concurrency Control**: Prevents overlapping push operations with concurrency group keyed by git ref.
+- **Permissions**: Explicit minimal permissions (`contents: read`) per job.
+
+**Signed Commit Setup (Required for Autograder)**
+
+Generate GPG or SSH key and enable signing:
+
+**Option A: GPG Signing**
+```powershell
+# Generate key
+gpg --full-generate-key  # Select RSA 4096, no expiration
+# List keys
+gpg --list-secret-keys --keyid-format=long
+# Export public key (copy output to GitHub Settings → SSH and GPG keys → New GPG key)
+gpg --armor --export <KEY_ID>
+# Configure Git
+git config --global user.signingkey <KEY_ID>
+git config --global commit.gpgsign true
+```
+
+**Option B: SSH Signing (simpler)**
+```powershell
+# Generate SSH key if needed
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# Add public key to GitHub Settings → SSH and GPG keys → New SSH signing key
+# Configure Git
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+git config --global commit.gpgsign true
+```
+
+**Create Signed Commit**
+```powershell
+# Make a trivial change or add note
+echo "# Security hardening complete" >> NOTES.txt
+git add NOTES.txt
+git commit -S -m "docs: module 1 security hardening complete"
+git push origin main
+```
+
+Verify commit shows "Verified" badge on GitHub before tagging.
+
+**DockerHub Setup**
+
+1. Create DockerHub account and repository (e.g., `ep3523/assign3`).
+2. Generate access token: Account Settings → Security → New Access Token (read/write permissions).
+3. Add GitHub repository secrets:
+   - `DOCKERHUB_USERNAME`: Your DockerHub username
+   - `DOCKERHUB_TOKEN`: Access token from step 2 (not password!)
+   - `DJANGO_SECRET_KEY`: Generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
+
+**Final Verification Before Tagging**
+
+```powershell
+# Ensure signed commit exists
+git log --show-signature -1
+# Trigger workflow manually to verify
+# (GitHub → Actions → Push Django Image to DockerHub → Run workflow)
+# Check DockerHub for images: <username>/assign3:v0, :latest, :assign3mod1handin
+# Verify no High/Critical vulnerabilities in Security tab
+```
+
+**Tag for Grading (After All Checks Pass)**
+```powershell
+git tag -a -m "Completed assign3 module1." assign3mod1handin
+git push origin main
+git push origin assign3mod1handin
+```
+
+### Additional Security Hardening (Bonus Context)
+
+The following hardening steps have been applied for defense-in-depth:
 
 | Area | Change |
 |------|--------|
