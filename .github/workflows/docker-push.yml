@@ -32,6 +32,8 @@ jobs:
             echo "Required DockerHub secrets missing"; exit 1; fi
           echo "DockerHub secrets present (masked)."
           echo "Username length: ${#REGISTRY_USER}"; echo "Token length: ${#REGISTRY_TOKEN}" | sed 's/.*/(masked)/'
+          if [ ${#REGISTRY_TOKEN} -lt 30 ]; then
+            echo "⚠️  Token appears too short - must be a Personal Access Token, not password"; exit 1; fi
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
