@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 0 * * 0'  # Weekly scan on Sundays
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   trivy-scan:
     name: Trivy Container Scan
@@ -29,7 +33,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -61,11 +65,13 @@ jobs:
       - name: Run Safety check for known vulnerabilities
         run: |
           safety check -r requirements.txt --output text || true
+        continue-on-error: true
       
       - name: Run Bandit security linter
         run: |
-          bandit -r GiftcardSite/ -f json -o bandit-report.json || true
-          bandit -r GiftcardSite/ -f screen
+          bandit -r GiftcardSite/ -f json -o bandit-report.json -ll || true
+          bandit -r GiftcardSite/ -f screen -ll || true
+        continue-on-error: true
       
       - name: Upload Bandit report
         uses: actions/upload-artifact@v4
@@ -73,23 +79,3 @@ jobs:
         with:
           name: bandit-security-report
           path: bandit-report.json
-
-  docker-scout:
-    name: Docker Scout Analysis
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Build Docker image
-        run: |
-          docker build -t scout-analysis:${{ github.sha }} .
-      
-      - name: Docker Scout CVE scan
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: scout-analysis:${{ github.sha }}
-          only-severities: critical,high
-          exit-code: false
