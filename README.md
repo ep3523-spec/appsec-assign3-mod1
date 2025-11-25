@@ -386,4 +386,5 @@ docker run --rm -e DJANGO_SECRET_KEY="dev_temp_secret" -e MYSQL_HOST="localhost"
 
 Keep secrets out of commits—use `.env` (excluded by `.gitignore`).
 #   T r i g g e r   w o r k f l o w   r e - r u n  
+ #   T r i g g e r   w i t h   u p d a t e d   t o k e n  
  
