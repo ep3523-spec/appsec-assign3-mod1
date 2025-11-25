@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from LegacySite import views as legacy_views
 from django.views import static
 from django.conf import settings
 
@@ -25,4 +26,7 @@ urlpatterns = [
     path('fonts/<str:path>/', static.serve, {'document_root': settings.FONT_ROOT}),
     path('', include('LegacySite.urls')),
     path('admin/', admin.site.urls),
+    path('healthz', legacy_views.healthz, name='healthz'),
+    path('readyz', legacy_views.readyz, name='readyz'),
+    path('metrics', legacy_views.metrics, name='metrics'),
 ]

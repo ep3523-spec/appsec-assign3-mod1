@@ -17,11 +17,15 @@ spec:
       containers:
         - name: assignment3-django-deploy
           image: nyuappsec/assign3:v0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: thisisatestthing.
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
 
             - name: MYSQL_DB
               value: GiftcardSiteDB
@@ -37,6 +41,30 @@ spec:
                 secretKeyRef:
                   name: django-secret
                   key: DJANGO_SECRET_KEY
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
 
           volumeMounts:
             - name: mysql-volume-mount

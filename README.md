@@ -1,3 +1,27 @@
+### Autograder Alignment Notes (Module 1)
+
+1. Signed Commit Requirement: Ensure at least one GPG/SSH verified commit on `main` before tagging. Use `git log --show-signature -1` to verify locally.
+2. Tag Timing: Create `assign3mod1handin` only after all fixes (secrets, metrics, workflow). If you change code post-tag, delete and recreate the tag.
+3. Docker Image Naming: Autograder expects an `assign3` image tagged `v0`. Workflow now pushes:
+	- `<DOCKERHUB_USERNAME>/assign3:v0`
+	- `<DOCKERHUB_USERNAME>/assign3:latest`
+	- `<DOCKERHUB_USERNAME>/assign3:<commit-sha>`
+	Confirm image exists on DockerHub before submission.
+4. Environment-Based SECRET_KEY: `settings.py` loads from `DJANGO_SECRET_KEY` env var only. If missing, it raises an error. Provide via Kubernetes Secret or local env.
+5. Dangerous Monitoring Removal: Passwords are never logged or used as metric labels. Metrics only track counts.
+6. 404 Metric: Implemented as Prometheus counter `http_404_total` via middleware.
+7. Health / Readiness: `/healthz` and `/readyz` endpoints added; Kubernetes probes call these paths.
+8. Retag Procedure (if rework needed):
+	```bash
+	git tag -d assign3mod1handin
+	git push origin :refs/tags/assign3mod1handin
+	git commit -S -m "fix: adjustments before retag"
+	git push origin main
+	git tag -a -m "Completed assign3 module1." assign3mod1handin
+	git push origin assign3mod1handin
+	```
+9. Local Test Shortcut: Run `python GiftcardSite/manage.py check` then `runserver` with `DJANGO_SECRET_KEY` exported to validate prior to tagging.
+
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/3D7ntlHb)
 # Homework 3: Deployment Gone Wrong
 ## Module 1: Setup
