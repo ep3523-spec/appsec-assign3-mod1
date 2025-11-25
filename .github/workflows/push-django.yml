@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-push:
-    runs-on: self-hosted 
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -46,7 +46,7 @@ jobs:
           file: ./Dockerfile
           push: true
           provenance: false
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:${{ steps.vars.outputs.sha_short }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/assign3:latest,${{ secrets.DOCKERHUB_USERNAME }}/assign3:${{ steps.vars.outputs.sha_short }}
           build-args: |
             DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
         # Lint tool warnings about secret context can be ignored; GitHub resolves at runtime.
@@ -58,6 +58,6 @@ jobs:
 
       - name: Summary
         run: |
-          echo "Image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_REPO }}:latest";
+          echo "Image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/assign3:latest";
           echo "Commit tag: ${{ steps.vars.outputs.sha_short }}";
       # Removed automatic .env copy to avoid accidental inclusion of unsafe defaults.
