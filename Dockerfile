@@ -4,7 +4,9 @@ ENV PATH="/scripts:${PATH}"
 
 # Security: Update base packages first to patch vulnerabilities
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    build-essential \
     gcc \
+    libc-dev \
     pkg-config \
     default-mysql-client \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
