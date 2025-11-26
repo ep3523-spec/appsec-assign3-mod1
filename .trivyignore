@@ -1,4 +1,4 @@
-# Trivy Ignore File
+﻿# Trivy Ignore File
 # These CVEs are in Debian 12 base image system libraries with no available patches
 # They do not affect the application code or critical dependencies
 
