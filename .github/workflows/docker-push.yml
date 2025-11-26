@@ -73,6 +73,7 @@ jobs:
     needs: build-and-push
     permissions:
       contents: read
+      security-events: write
     env:
       REGISTRY_USER: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
