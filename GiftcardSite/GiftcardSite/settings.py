@@ -1,6 +1,13 @@
 import os
 from pathlib import Path
 
+# Enable PyMySQL as MySQL driver
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
