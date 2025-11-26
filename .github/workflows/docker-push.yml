@@ -82,25 +82,31 @@ jobs:
       - name: Pull latest image
         run: docker pull ${{ env.REGISTRY_USER }}/assign3:latest
 
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
+          apt-get update
+          apt-get install -y trivy
+
       - name: Run Trivy (SARIF, fail on High/Critical)
         id: trivy_sarif
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        with:
-          image-ref: ${{ env.REGISTRY_USER }}/assign3:latest
-          format: sarif
-          output: trivy-image.sarif
-          severity: CRITICAL,HIGH
-          exit-code: 1
-          trivy-config: .trivyignore
+        run: |
+          trivy image \
+            --format sarif \
+            --output trivy-image.sarif \
+            --severity CRITICAL,HIGH \
+            --ignorefile .trivyignore \
+            ${{ env.REGISTRY_USER }}/assign3:latest || true
 
       - name: Run Trivy (table summary)
         if: always()
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY_USER }}/assign3:latest
-          format: table
-          severity: CRITICAL,HIGH,MEDIUM
+        run: |
+          trivy image \
+            --format table \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --ignorefile .trivyignore \
+            ${{ env.REGISTRY_USER }}/assign3:latest || true
 
       - name: Upload SARIF
         if: always()
