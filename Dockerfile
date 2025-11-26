@@ -28,7 +28,7 @@ RUN chmod +x /scripts/*
 RUN mkdir -p /vol/web/media
 RUN mkdir -p /vol/web/static
 
-RUN adduser -D django-app
+RUN adduser --disabled-password --gecos "" django-app
 
 RUN chown -R django-app:django-app /vol
 
