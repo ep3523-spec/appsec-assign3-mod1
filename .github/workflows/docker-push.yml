@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     env:
       REGISTRY_USER: ${{ secrets.DOCKERHUB_USERNAME }}
       REGISTRY_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -70,7 +70,7 @@ jobs:
 
   trivy-scan:
     name: Trivy Post-Push Scan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-and-push
     env:
       REGISTRY_USER: ${{ secrets.DOCKERHUB_USERNAME }}
