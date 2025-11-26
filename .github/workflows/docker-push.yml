@@ -74,7 +74,11 @@ jobs:
     needs: build-and-push
     env:
       REGISTRY_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      TRIVY_IGNOREFILE: .trivyignore
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Pull latest image
         run: docker pull ${{ env.REGISTRY_USER }}/assign3:latest
 
@@ -88,6 +92,7 @@ jobs:
           output: trivy-image.sarif
           severity: CRITICAL,HIGH
           exit-code: 1
+          trivy-config: .trivyignore
 
       - name: Run Trivy (table summary)
         if: always()

@@ -1,0 +1,15 @@
+# Trivy Ignore File
+# These CVEs are in Debian 12 base image system libraries with no available patches
+# They do not affect the application code or critical dependencies
+
+# SQLite integer overflow - no patch available in Debian 12
+CVE-2025-7458
+
+# zlib integer overflow - marked as will_not_fix, no patch available
+CVE-2023-45853
+
+# Linux PAM directory traversal - no patch available in Debian 12
+CVE-2025-6020
+
+# Linux kernel - marked as will_not_fix
+CVE-2013-7445
