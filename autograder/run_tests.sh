@@ -49,7 +49,18 @@ run_test() {
 
 SCORE=0
 
-cd "${STUDENT_REPO}" || exit 1
+# Try primary path, fallback to current directory or /autograder/source
+if [ -d "${STUDENT_REPO}" ]; then
+    cd "${STUDENT_REPO}"
+elif [ -d "/autograder/source" ]; then
+    cd "/autograder/source"
+elif [ -f "GiftcardSite/manage.py" ]; then
+    # Already in correct directory
+    cd .
+else
+    echo "Error: Could not locate student repository"
+    exit 1
+fi
 
 # Test 0.1: Signed Git Commit (20 pts)
 run_test "Part 1: Confirm that you have at least one signed Git commit" \
@@ -61,7 +72,7 @@ run_test "Part 1: Confirm that the secret variable in Django settings is now an 
 
 # Test 2.1: Dangerous monitoring removed (30 pts)
 run_test "Part 2: Confirm dangerous monitoring is removed" \
-    "! grep -r 'password' GiftcardSite --include='*.py' 2>/dev/null | grep -iq 'log\|print\|metric' | head -1" 30
+    "! grep -r 'password' GiftcardSite --include='*.py' 2>/dev/null | grep -iq 'log\|print\|metric'" 30
 
 # Test 2.2: 404 metrics counter (30 pts)
 run_test "Part 2: That the metric is correctly updated to accurately count the 404 metrics" \
